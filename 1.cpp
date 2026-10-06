@@ -1,60 +1,77 @@
-#include<iostream>
+#include <iostream>
+#include <cstring>
 using namespace std;
 
-class BankAccount{
-    double balance;
+class HashNode{
 public:
-    BankAccount() : balance(0.0){
-        cout << "Initial balance is: $" << balance << endl;
+    char key[50];
+    char value[50];
+    HashNode* next;
+
+    HashNode(const char* k, const char* v){
+        strcpy(key, k);
+        strcpy(value, v);
+        next = nullptr;
     }
-    BankAccount(double a): balance(a){
-        cout << "Current balance is: $" << balance << endl;
-    }
-    BankAccount(BankAccount& b): balance(b.balance){
-        cout << "Amount copied is: $" << balance << endl;
+};
+
+class HashTable{
+    HashNode* table[10];
+    int numBuckets;
+
+    int hashFunction(const char* key){
+        int sum = 0;
+        for (int i = 0; key[i] != '\0'; i++){
+            sum += int(key[i]);
+        }
+        return (sum % numBuckets);
     }
 
-    void withdraw(double amt){
-        if(balance > amt){
-            balance -= amt;
-            cout << "Amount withdrawn: $" << amt << endl;
-            cout << "New Balance is: $" << balance << endl;
+public:
+    HashTable(int buckets = 10){
+        numBuckets = buckets;
+        for (int i = 0; i < numBuckets; i++){
+            table[i] = nullptr;
         }
+    }
+
+    void insert(const char* key, const char* value){
+        int index = hashFunction(key);
+        HashNode* newNode = new HashNode(key, value);
+
+        if (table[index] == nullptr){
+            table[index] = newNode;
+        } 
         else{
-            cout << "Insufficient Balance!" << endl;
+            HashNode* temp = table[index];
+            while (temp->next != nullptr){
+                temp = temp->next;
+            }
+            temp->next = newNode;
         }
-        cout << endl;
     }
 
-    double getbalance(){return balance;} 
-    void display(string acct){
-        cout << "Balance in "<< acct << " is: $" << balance << endl;
+    void display(){
+        for (int i = 0; i < numBuckets; i++){
+            cout << "Bucket " << i << ": ";
+            HashNode* temp = table[i];
+            while (temp != nullptr){
+                cout << "(" << temp->key << ", " << temp->value << ") ";
+                temp = temp->next;
+            }
+            cout << endl;
+        }
     }
 };
 
 int main(){
-    BankAccount account1;
-    account1.display("account1");
-    cout << endl;
+    HashTable myhash(10);
 
-    BankAccount account2(999.99);
-    account2.display("account2");
-    cout << endl << endl;
-
-    BankAccount account3(account2);
-    account2.display("account2");
-    account3.display("account3");
-    cout << endl;
-
-    account3.withdraw(77777);
-    account2.display("account2");
-    account3.display("account3");
-    cout << endl;
-
-    account3.withdraw(245.56);
-    account2.display("account2");
-    account3.display("account3");
-    cout << endl;
+    myhash.insert("A", "aaaaa");
+    myhash.insert("B", "bbbbb");
+    myhash.insert("C", "ccccc");
+    myhash.insert("A", "zzzzz");
+    myhash.display();
 
     return 0;
 }

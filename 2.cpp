@@ -1,98 +1,121 @@
 #include <iostream>
+#include <cstring>
 using namespace std;
 
-class Exam{
-    char* studentname;  
-    char* examdate;     
-    double score;
+class HashNode{
+public:
+    char key[50];
+    char value[50];
+    HashNode* next;
 
-    int stringLength(const char* str){
-        int l = 0;
-        while (str[l] != '\0'){
-            l++;
-        }
-        return l;
+    HashNode(const char* k, const char* v){
+        strcpy(key, k);
+        strcpy(value, v);
+        next = nullptr;
     }
+};
 
-    void stringCopy(char* d, const char* src){
-        int i = 0;
-        while (src[i] != '\0'){
-            d[i] = src[i];
-            i++;
+class Dictionary{
+    static const int tableSize = 100;
+    HashNode* table[tableSize];
+
+    int hashFunction(const char* key) {
+        int sum = 0;
+        for (int i = 0; key[i] != '\0'; i++){
+            sum += int(key[i]);
         }
-        d[i] = '\0';
+        return sum % tableSize;
     }
 
 public:
-    Exam(const char* n, const char* d, double S){
-        int nameLen = stringLength(n);
-        studentname = new char[nameLen + 1];
-        stringCopy(studentname, n);
-        
-        int dateLen = stringLength(d);
-        examdate = new char[dateLen + 1];
-        stringCopy(examdate, d);
-        
-        score = S;
-        cout << endl;
+    Dictionary() {
+        for (int i = 0; i < tableSize; i++){
+            table[i] = nullptr;
+        }
     }
 
-    ~Exam(){        
-        delete[] studentname;
-        delete[] examdate;
+    void Add_Record(const char* key, const char* value){
+        int index = hashFunction(key);
+        HashNode* newNode = new HashNode(key, value);
 
-        studentname = nullptr;
-        examdate = studentname;
+        if (table[index] == nullptr){
+            table[index] = newNode;
+        } 
+        else{
+            HashNode* temp = table[index];
+            while (temp->next != nullptr){
+                temp = temp->next;
+        }
+            temp->next = newNode;
+        }
+        cout << "Record (" << key << ", " << value << ") added at index " << index << endl;
     }
 
-    void setStudentName(const char* n){
-        delete[] studentname;
-        int nameLen = stringLength(n);
-        studentname = new char[nameLen + 1];
-        stringCopy(studentname, n);
+    void Word_Search(const char* key){
+        int index = hashFunction(key);
+        HashNode* temp = table[index];
+        while (temp != nullptr){
+            if (strcmp(temp->key, key) == 0){
+                cout << "Search key " << key << ": " << temp->value << endl;
+                return;
+            }
+
+            temp = temp->next;
+        }
+
+        cout << "Error: Key " << key << " not found!" << endl;
     }
 
-    void setExamDate(const char* d){
-        delete[] examdate;
-        int dateLen = stringLength(d);
-        examdate = new char[dateLen + 1];
-        stringCopy(examdate, d);
+    void Delete_Record(const char* key){
+        int index = hashFunction(key);
+        HashNode* temp = table[index];
+        HashNode* prev = nullptr;
+
+        while (temp != nullptr){
+            if (strcmp(temp->key, key) == 0){
+                if (prev == nullptr){
+                    table[index] = temp->next;
+                }
+                else{
+                    prev->next = temp->next;
+                }
+
+                delete temp;
+                cout << "Key " << key << " deleted successfully!" << endl;
+                return;
+            }
+            prev = temp;
+            temp = temp->next;
+        }
+        cout << "Error: Key " << key << " not found!" << endl;
     }
 
-    void setScore(double examScore){score = examScore;}
-    void displayExamDetails(){
-        cout << "Student: ";
-        if (studentname != nullptr){cout << studentname;} 
-        else{cout << "N/A";}
-        
-        cout << "Date: ";
-        if (examdate != nullptr){cout << examdate;} 
-        else{cout << "Not Available!";}
-        
-        cout << "Score: " << score << "/100 & Percentage: " << score << "%" << endl;
+    void Print_Dictionary(){
+        for (int i = 0; i < tableSize; i++){
+            if (table[i] != nullptr){
+                cout << "Index " << i << ": ";
+                HashNode* temp = table[i];
+
+                while (temp != nullptr){
+                    cout << "(" << temp->key << ", " << temp->value << ") ";
+                    temp = temp->next;
+                }
+                cout << endl;
+            }
+        }
     }
 };
 
 int main(){
-    Exam exam1("John Doe", "2024-03-15", 85.5);
-    exam1.displayExamDetails();
-    cout << endl << endl;
- 
-    Exam exam2 = exam1;
-    exam1.displayExamDetails();
-    exam2.displayExamDetails();
-    cout << endl << endl;
+    Dictionary dict;
 
-    exam2.setStudentName("Jane Smith");
-    exam2.setScore(92.0);
-    cout << endl;
+    dict.Add_Record("AB", "FASTNU");
+    dict.Add_Record("CD", "CS");
+    dict.Add_Record("EF", "ENG");
 
-    cout << "After modifying exam2:" << endl;
-    exam1.displayExamDetails(); // Unexpected behaviour (Could crash)
-    exam2.displayExamDetails();
-    cout << endl;
+    dict.Word_Search("AB");
+    dict.Delete_Record("EF");
+    dict.Print_Dictionary();
 
-    cout << "Both objects point to the same memory locations!" << endl;
-    cout << "Destructors try to delete the same memory twice." << endl << endl;
     return 0;
 }

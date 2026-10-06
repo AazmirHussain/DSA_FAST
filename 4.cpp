@@ -1,69 +1,97 @@
 #include <iostream>
 using namespace std;
 
-class Node{
+class Pair{
 public:
-    int val;
-    Node* next;
-
-    Node(int val): val(val), next(nullptr){}
+    int first, second;
+    Pair(): first(0), second(0){}
+    Pair(int f, int s): first(f), second(s){}
 };
 
-class ll{
-    Node* head;
-
-    bool search(Node* node, int key){
-        if(node == nullptr){return false;}
-        bool found = search(node->next, key);
-
-        if(node->val == key){return true;}
-        return found;
-    }
+class HashTable{
+    static const int TABLE_SIZE = 100;
+    Pair table[TABLE_SIZE];
+    bool occupied[TABLE_SIZE];
+    
+    int hashFunction(int key){return abs(key) % TABLE_SIZE;}
 
 public:
-    ll(){head = nullptr;}
+    HashTable(){
+        for (int i = 0; i < TABLE_SIZE; i++){occupied[i] = false;}
+    }
 
-    void insert(int value){
-        Node* newnode = new Node(value);
+    void insert(int key, Pair value){
+        int index = hashFunction(key);
+        int startIndex = index;
         
-        if(!head){head = newnode; return;}
-
-        Node* temp = head;
-        while(temp->next){temp = temp->next;}
-        temp->next = newnode;
+        while (occupied[index]){
+            index = (index + 1) % TABLE_SIZE;
+            if (index == startIndex){return;}
+        }
+        
+        table[index] = value;
+        occupied[index] = true;
     }
 
-    bool searching(int key){return search(head, key);}
-
-    void display(){
-        cout << "Linked List: ";
-        Node* temp = head;
-        while (temp){
-            cout << temp->val << " ";
-            temp = temp->next;
+    bool find(int key, Pair& result){
+        int index = hashFunction(key);
+        int startIndex = index;
+        
+        while (occupied[index]){
+            result = table[index];
+            return true;
         }
-        cout << endl;
+        return false;
+    }
+
+    bool contains(int key){
+        int index = hashFunction(key);
+        int startIndex = index;
+        
+        while (occupied[index]){return true;}
+        return false;
     }
 };
+
+bool areDistinct(int a, int b, int c, int d){
+    return(a != c && a != d && b != c && b != d);
+}
+
+void findPairsWithEqualSum(int arr[], int n){
+    HashTable sumMap;
+    bool found = false;
+    
+    for (int i = 0; i < n - 1 && !found; i++){
+        for (int j = i + 1; j < n && !found; j++){
+            int sum = arr[i] + arr[j];
+            Pair existingPair;
+            
+            if (sumMap.find(sum, existingPair)){
+                if (areDistinct(existingPair.first, existingPair.second, arr[i], arr[j])) {
+                    cout << "(" << existingPair.first << ", " << existingPair.second << ") and ("
+                    << arr[i] << ", " << arr[j] << ")" << endl;
+                    found = true;
+                }
+            } 
+            else{sumMap.insert(sum, Pair(arr[i], arr[j]));}
+        }
+    }
+    
+    if (!found){cout << "No pairs found" << endl;}
+}
 
 int main(){
-    int key;
-    ll list;
-    list.insert(10);
-    list.insert(15);
-    list.insert(25);
-    list.insert(30);
-
-    list.display();
-    cout << "Enter the value you wish to find: ";
-    cin >> key;
-
-    if (list.searching(key)){
-        cout << key << " Found!" << endl;
-    } 
-    else {
-        cout << key << " Not found!" << endl;
-    }
-
+    int arr1[] = {3, 4, 7, 1, 2, 9, 8};
+    int n1 = sizeof(arr1) / sizeof(arr1[0]);
+    findPairsWithEqualSum(arr1, n1);
+    
+    int arr2[] = {3, 4, 7, 1, 12, 9};
+    int n2 = sizeof(arr2) / sizeof(arr2[0]);
+    findPairsWithEqualSum(arr2, n2);
+    
+    int arr3[] = {65, 30, 7, 90, 1, 9, 8};
+    int n3 = sizeof(arr3) / sizeof(arr3[0]);
+    findPairsWithEqualSum(arr3, n3);
+    
     return 0;
 }
