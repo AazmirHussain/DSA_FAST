@@ -1,104 +1,156 @@
 #include <iostream>
-#include <string>
 using namespace std;
-
-class StdRecord{
-    int rollNumber;
-    string name;
-    bool isOccupied;
+class Graph{
+    int vertices;
+    int** adjMatrix;
+    int* visited;
+    
+    void DFSRecursive(int vertex){
+        visited[vertex] = 1;
+        cout << vertex << " ";
+        
+        for (int i = 0; i < vertices; i++){
+            if (adjMatrix[vertex][i] == 1 && !visited[i]){DFSRecursive(i);}
+        }
+    }
 
 public:
-    StdRecord(): rollNumber(-1), isOccupied(false){}
-    
-    int getRollNumber(){return rollNumber;}
-    string getName(){ return name;}
-    bool getIsOccupied(){ return isOccupied;}
-    
-    void setRecord(int roll, string Name){
-        rollNumber = roll;
-        name = Name;
-        isOccupied = true;
-    }
-};
-
-class Stdtable{
-    static const int TABLE_SIZE = 15;
-    StdRecord table[TABLE_SIZE];
-    
-    int hashFunction(int rollNumber){return rollNumber % TABLE_SIZE;}
-
-public:
-    void InsertRecord(int rollNumber, string name){
-        int index = hashFunction(rollNumber);
-        int attempt = 0;
+    Graph(int v){
+        vertices = v;
         
-        while (attempt < TABLE_SIZE){
-            int probeIndex = (index + attempt * attempt) % TABLE_SIZE;
-            
-            if (!table[probeIndex].getIsOccupied()){
-                table[probeIndex].setRecord(rollNumber, name);
-                cout << "Record inserted successfully at index " << probeIndex << endl;
-                return;
-            }
-            attempt++;
+        adjMatrix = new int*[vertices];
+        for (int i = 0; i < vertices; i++){
+            adjMatrix[i] = new int[vertices];
+            for (int j = 0; j < vertices; j++){adjMatrix[i][j] = 0;}
         }
         
-        cout << "Hash table is full. Cannot insert record." << endl;
+        visited = new int[vertices];
+        resetVisited();
     }
     
-    void SearchRecord(int rollNumber){
-        int index = hashFunction(rollNumber);
-        int attempt = 0;
-        
-        while (attempt < TABLE_SIZE){
-            int probeIndex = (index + attempt * attempt) % TABLE_SIZE;
-            
-            if (!table[probeIndex].getIsOccupied()){break;}
-            
-            if (table[probeIndex].getRollNumber() == rollNumber && table[probeIndex].getIsOccupied()) {
-                cout << "Record found: Roll Number " << rollNumber << ", Name: " << table[probeIndex].getName() << endl;
-                return;
-            }
-            attempt++;
-        }
-        
-        cout << "Record not found for roll number " << rollNumber << endl;
+    ~Graph(){
+        for (int i = 0; i < vertices; i++){delete[] adjMatrix[i];}
+        delete[] adjMatrix;
+        delete[] visited;
     }
     
-    void DisplayTable(){
-        cout << "\nHash Table Contents:" << endl;
-        cout << "Index\tRoll Number\tName\t\tStatus" << endl;
-        cout << endl << endl;
-        for (int i = 0; i < TABLE_SIZE; i++){cout << i << "\t";
-            if (table[i].getIsOccupied()){
-                cout << table[i].getRollNumber() << "\t\t" << table[i].getName() << "\t\tOccupied";} 
-            else{cout << "-\t\t-\t\tEmpty";}
+    void resetVisited(){
+        for (int i = 0; i < vertices; i++){visited[i] = 0;}
+    }
+    
+    void addEdge(int src, int dest){
+        adjMatrix[src][dest] = 1;
+        adjMatrix[dest][src] = 1;
+    }
+    
+    void displayAdjacencyMatrix(){
+        cout << "Adjacency Matrix:" << endl;
+        cout << "  ";
+        for (int i = 0; i < vertices; i++){cout << i << " ";}
+        cout << endl;
+        
+        for (int i = 0; i < vertices; i++){
+            cout << i << " ";
+            for (int j = 0; j < vertices; j++){cout << adjMatrix[i][j] << " ";}
             cout << endl;
         }
-        cout << endl << endl;
+        cout << endl;
+    }
+    
+    void displayAdjacencyList(){
+        cout << "Adjacency List:" << endl;
+        for (int i = 0; i < vertices; i++){
+            cout << i << " -> ";
+            bool first = true;
+            for (int j = 0; j < vertices; j++){
+                if (adjMatrix[i][j] == 1){
+                    if (!first){cout << ", ";}
+                    cout << j;
+                    first = false;
+                }
+            }
+            cout << endl;
+        }
+        cout << endl;
+    }
+    
+    void BFS(int startVertex){
+        resetVisited();
+        cout << "BFS Traversal: ";
+        
+        int queue[vertices];
+        int front = 0, rear = 0;
+        visited[startVertex] = 1;
+        queue[rear++] = startVertex;
+        
+        while (front < rear){
+            int current = queue[front++];
+            cout << current << " ";
+            
+            for (int i = 0; i < vertices; i++){
+                if (adjMatrix[current][i] == 1 && !visited[i]){
+                    visited[i] = 1;
+                    queue[rear++] = i;
+                }
+            }
+        }
+        cout << endl;
+    }
+    
+    void DFS(int startVertex){
+        resetVisited();
+        cout << "DFS Traversal: ";
+        DFSRecursive(startVertex);
+        cout << endl;
+    }
+    
+    void DFSIterative(int startVertex){
+        resetVisited();
+        cout << "DFS Iterative: ";
+        
+        int stack[vertices];
+        int top = -1;
+        stack[++top] = startVertex;
+        
+        while (top >= 0){
+            int current = stack[top--];
+            
+            if (!visited[current]){
+                visited[current] = 1;
+                cout << current << " ";
+                
+                for (int i = vertices - 1; i >= 0; i--){
+                    if (adjMatrix[current][i] == 1 && !visited[i]){stack[++top] = i;}
+                }
+            }
+        }
+        cout << endl;
     }
 };
 
 int main(){
-    Stdtable studentDB;
+    Graph g(5);
+    g.addEdge(0, 1);
+    g.addEdge(0, 2);
+    g.addEdge(1, 3);
+    g.addEdge(1, 4);
+    g.addEdge(2, 3);
+    g.addEdge(3, 4);
     
-    cout << " Student Record Management System " << endl;
+    cout << "=== GRAPH IMPLEMENTATION ===" << endl << endl;
+    g.displayAdjacencyList();
+    g.displayAdjacencyMatrix();
     
-    studentDB.InsertRecord(101, "Alice");
-    studentDB.InsertRecord(115, "Bob");
-    studentDB.InsertRecord(116, "Charlie");
-    studentDB.InsertRecord(102, "Diana");
-    studentDB.InsertRecord(131, "Eve");
-    studentDB.InsertRecord(146, "Frank");
+    cout << "=== GRAPH TRAVERSALS ===" << endl;
+    g.BFS(0);
+    g.DFS(0);
+    g.DFSIterative(0);
     
-    cout << "\n Searching Records " << endl;
-    studentDB.SearchRecord(101);
-    studentDB.SearchRecord(115);
-    studentDB.SearchRecord(116);
-    studentDB.SearchRecord(200);
-    
-    cout << "\n Displaying Hash Table " << endl;
-    studentDB.DisplayTable();
+    cout << endl << "=== BFS FROM ALL VERTICES ===" << endl;
+    for (int i = 0; i < 5; i++){
+        cout << "Start at " << i << ": ";
+        g.BFS(i);
+    }
     
     return 0;
 }

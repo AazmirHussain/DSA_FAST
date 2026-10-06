@@ -1,121 +1,83 @@
 #include <iostream>
-#include <cstring>
+#include <string>
 using namespace std;
 
-class HashNode{
+class PlagDetector{
+    const int PRIME = 101;
+
+    int calculate(const string& str, int length){
+        int hash = 0;
+        for (int i = 0; i < length; i++){
+            hash = (hash + str[i]) % PRIME;
+        }
+        return hash;
+    }
+    
+    int recalculateHash(const string& text, int oldIndex, int oldHash, int patternLength){
+        int newHash = oldHash - text[oldIndex];
+        newHash = (newHash + text[oldIndex + patternLength]) % PRIME;
+
+        if (newHash < 0){newHash += PRIME;}
+        return newHash;
+    }
+    
 public:
-    char key[50];
-    char value[50];
-    HashNode* next;
-
-    HashNode(const char* k, const char* v){
-        strcpy(key, k);
-        strcpy(value, v);
-        next = nullptr;
-    }
-};
-
-class Dictionary{
-    static const int tableSize = 100;
-    HashNode* table[tableSize];
-
-    int hashFunction(const char* key) {
-        int sum = 0;
-        for (int i = 0; key[i] != '\0'; i++){
-            sum += int(key[i]);
-        }
-        return sum % tableSize;
-    }
-
-public:
-    Dictionary() {
-        for (int i = 0; i < tableSize; i++){
-            table[i] = nullptr;
-        }
-    }
-
-    void Add_Record(const char* key, const char* value){
-        int index = hashFunction(key);
-        HashNode* newNode = new HashNode(key, value);
-
-        if (table[index] == nullptr){
-            table[index] = newNode;
-        } 
-        else{
-            HashNode* temp = table[index];
-            while (temp->next != nullptr){
-                temp = temp->next;
-        }
-            temp->next = newNode;
-        }
-        cout << "Record (" << key << ", " << value << ") added at index " << index << endl;
-    }
-
-    void Word_Search(const char* key){
-        int index = hashFunction(key);
-        HashNode* temp = table[index];
-        while (temp != nullptr){
-            if (strcmp(temp->key, key) == 0){
-                cout << "Search key " << key << ": " << temp->value << endl;
-                return;
-            }
-
-            temp = temp->next;
-        }
-
-        cout << "Error: Key " << key << " not found!" << endl;
-    }
-
-    void Delete_Record(const char* key){
-        int index = hashFunction(key);
-        HashNode* temp = table[index];
-        HashNode* prev = nullptr;
-
-        while (temp != nullptr){
-            if (strcmp(temp->key, key) == 0){
-                if (prev == nullptr){
-                    table[index] = temp->next;
+    void rabinKarpSearch(const string& text, const string& pattern, int indices[], int& count){
+        count = 0;
+        int n = text.length();
+        int m = pattern.length();
+        
+        if (m == 0 || m > n){return;}
+        
+        int patternHash = calculate(pattern, m);
+        int Hash = calculate(text, m);
+        
+        cout << "Pattern hash: " << patternHash << endl;
+        for (int i = 0; i <= n - m; i++){
+            cout << "Position " << i << ": Hash = " << Hash;
+            
+            if (patternHash ==Hash){
+                bool trueMatch = true;
+                for (int j = 0; j < m; j++){
+                    if (text[i + j] != pattern[j]){
+                        trueMatch = false;
+                        cout << " - HASH COLLISION! Discarding false positive";
+                        break;
+                    }
                 }
-                else{
-                    prev->next = temp->next;
+                
+                if (trueMatch){
+                    indices[count] = i;
+                    count++;
+                    cout << " - TRUE MATCH!";
                 }
-
-                delete temp;
-                cout << "Key " << key << " deleted successfully!" << endl;
-                return;
-            }
-            prev = temp;
-            temp = temp->next;
-        }
-        cout << "Error: Key " << key << " not found!" << endl;
-    }
-
-    void Print_Dictionary(){
-        for (int i = 0; i < tableSize; i++){
-            if (table[i] != nullptr){
-                cout << "Index " << i << ": ";
-                HashNode* temp = table[i];
-
-                while (temp != nullptr){
-                    cout << "(" << temp->key << ", " << temp->value << ") ";
-                    temp = temp->next;
-                }
-                cout << endl;
-            }
+            } 
+            else{cout << " - Hash mismatch";}
+            cout << endl;
+            
+            if (i < n - m){Hash = recalculateHash(text, i, Hash, m);}
         }
     }
 };
 
 int main(){
-    Dictionary dict;
+    PlagDetector detector;
+    string text = "Data structures and algorithms are fun. Algorithms make tasks easier.";
+    string pattern = "Algorithms";
+    
+    int indices[100];
+    int count;    
+    cout << "Searching for pattern: \"" << pattern << "\" in text:\n" << "\"" << text << "\"\n\n";
 
-    dict.Add_Record("AB", "FASTNU");
-    dict.Add_Record("CD", "CS");
-    dict.Add_Record("EF", "ENG");
-
-    dict.Word_Search("AB");
-    dict.Delete_Record("EF");
-    dict.Print_Dictionary();
-
+    detector.rabinKarpSearch(text, pattern, indices, count);
+    
+    cout << "\nFinal Results:" << endl;
+    cout << "Pattern found at positions: [";
+    for (int i = 0; i < count; i++){
+        cout << indices[i];
+        if (i < count - 1){cout << ", ";}
+    }
+    cout << "]" << endl;
+    
     return 0;
 }

@@ -1,97 +1,96 @@
 #include <iostream>
+#include <string>
 using namespace std;
 
-class Pair{
-public:
-    int first, second;
-    Pair(): first(0), second(0){}
-    Pair(int f, int s): first(f), second(s){}
-};
-
-class HashTable{
-    static const int TABLE_SIZE = 100;
-    Pair table[TABLE_SIZE];
-    bool occupied[TABLE_SIZE];
-    
-    int hashFunction(int key){return abs(key) % TABLE_SIZE;}
-
-public:
-    HashTable(){
-        for (int i = 0; i < TABLE_SIZE; i++){occupied[i] = false;}
-    }
-
-    void insert(int key, Pair value){
-        int index = hashFunction(key);
-        int startIndex = index;
+class BookSearcher{
+    void computeLPS(const string& pattern, int lps[]){
+        int m = pattern.length();
+        int len = 0;
+        lps[0] = 0;
         
-        while (occupied[index]){
-            index = (index + 1) % TABLE_SIZE;
-            if (index == startIndex){return;}
-        }
-        
-        table[index] = value;
-        occupied[index] = true;
-    }
-
-    bool find(int key, Pair& result){
-        int index = hashFunction(key);
-        int startIndex = index;
-        
-        while (occupied[index]){
-            result = table[index];
-            return true;
-        }
-        return false;
-    }
-
-    bool contains(int key){
-        int index = hashFunction(key);
-        int startIndex = index;
-        
-        while (occupied[index]){return true;}
-        return false;
-    }
-};
-
-bool areDistinct(int a, int b, int c, int d){
-    return(a != c && a != d && b != c && b != d);
-}
-
-void findPairsWithEqualSum(int arr[], int n){
-    HashTable sumMap;
-    bool found = false;
-    
-    for (int i = 0; i < n - 1 && !found; i++){
-        for (int j = i + 1; j < n && !found; j++){
-            int sum = arr[i] + arr[j];
-            Pair existingPair;
-            
-            if (sumMap.find(sum, existingPair)){
-                if (areDistinct(existingPair.first, existingPair.second, arr[i], arr[j])) {
-                    cout << "(" << existingPair.first << ", " << existingPair.second << ") and ("
-                    << arr[i] << ", " << arr[j] << ")" << endl;
-                    found = true;
-                }
+        int i = 1;
+        while (i < m){
+            if (pattern[i] == pattern[len]){
+                len++;
+                lps[i] = len;
+                i++;
             } 
-            else{sumMap.insert(sum, Pair(arr[i], arr[j]));}
+            else {
+                if (len != 0){len = lps[len - 1];} 
+                else {
+                    lps[i] = 0;
+                    i++;
+                }
+            }
         }
     }
-    
-    if (!found){cout << "No pairs found" << endl;}
-}
+
+public:
+    void KMPSearch(const string& text, const string& pattern, int indices[], int& indexCount){
+        indexCount = 0;
+        int n = text.length();
+        int m = pattern.length();
+        
+        if (m == 0 || m > n){return;}
+        
+        int lps[m];
+        computeLPS(pattern, lps);
+        
+        cout << "LPS Array for pattern \"" << pattern << "\": [";
+        for (int i = 0; i < m; i++){
+            cout << lps[i];
+            if (i < m - 1){cout << ", ";}
+        }
+        cout << "]" << endl << endl;
+        
+        int i = 0, j = 0;
+        
+        while (i < n){
+            cout << "Comparing text[" << i << "]='" << text[i] << "' with pattern[" << j << "]='" << pattern[j] << "'";
+            
+            if (pattern[j] == text[i]){
+                cout << " - MATCH" << endl;
+                i++;
+                j++;
+            }
+            
+            if (j == m){
+                indices[indexCount] = i - j;
+                indexCount++;
+                cout << ">>> PATTERN FOUND at position " << (i - j) << " <<<" << endl;
+                j = lps[j - 1];
+            } 
+            else if (i < n && pattern[j] != text[i]){
+                cout << " - MISMATCH" << endl;
+                if (j != 0){
+                    cout << "  Backtracking j from " << j << " to " << lps[j - 1] << " using LPS" << endl;
+                    j = lps[j - 1];
+                } 
+                else{i++;}
+            }
+        }
+    }
+};
 
 int main(){
-    int arr1[] = {3, 4, 7, 1, 2, 9, 8};
-    int n1 = sizeof(arr1) / sizeof(arr1[0]);
-    findPairsWithEqualSum(arr1, n1);
+    BookSearcher searcher;
+    string text = "ababababc";
+    string pattern = "abab";
     
-    int arr2[] = {3, 4, 7, 1, 12, 9};
-    int n2 = sizeof(arr2) / sizeof(arr2[0]);
-    findPairsWithEqualSum(arr2, n2);
+    int indices[100];
+    int indexCount;
     
-    int arr3[] = {65, 30, 7, 90, 1, 9, 8};
-    int n3 = sizeof(arr3) / sizeof(arr3[0]);
-    findPairsWithEqualSum(arr3, n3);
+    cout << "Book Content: \"" << text << "\"" << endl;
+    cout << "Searching for: \"" << pattern << "\"" << endl << endl;
+    
+    searcher.KMPSearch(text, pattern, indices, indexCount);
+    
+    cout << "\n=== SEARCH RESULTS === \n" << "Pattern found at positions: [";
+    for (int i = 0; i < indexCount; i++){
+        cout << indices[i];
+        if (i < indexCount - 1){cout << ", ";}
+    }
+    cout << "]" << endl;
     
     return 0;
 }

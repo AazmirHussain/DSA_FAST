@@ -1,77 +1,53 @@
 #include <iostream>
-#include <cstring>
+#include <string>
 using namespace std;
 
-class HashNode{
+class TextSearcher{
 public:
-    char key[50];
-    char value[50];
-    HashNode* next;
-
-    HashNode(const char* k, const char* v){
-        strcpy(key, k);
-        strcpy(value, v);
-        next = nullptr;
-    }
-};
-
-class HashTable{
-    HashNode* table[10];
-    int numBuckets;
-
-    int hashFunction(const char* key){
-        int sum = 0;
-        for (int i = 0; key[i] != '\0'; i++){
-            sum += int(key[i]);
-        }
-        return (sum % numBuckets);
-    }
-
-public:
-    HashTable(int buckets = 10){
-        numBuckets = buckets;
-        for (int i = 0; i < numBuckets; i++){
-            table[i] = nullptr;
-        }
-    }
-
-    void insert(const char* key, const char* value){
-        int index = hashFunction(key);
-        HashNode* newNode = new HashNode(key, value);
-
-        if (table[index] == nullptr){
-            table[index] = newNode;
-        } 
-        else{
-            HashNode* temp = table[index];
-            while (temp->next != nullptr){
-                temp = temp->next;
+    void searchPattern(const string& text, const string& pattern, int indices[], int& index, int& cmpcount){
+        index = 0;
+        cmpcount = 0;
+        int n = text.length();
+        int m = pattern.length();
+        
+        if (m == 0 || m > n){return;}
+        
+        for (int i = 0; i <= n - m; i++){
+            bool match = true;
+            for (int j = 0; j < m; j++){
+                cmpcount++;
+                if (text[i + j] != pattern[j]){
+                    match = false;
+                    break;
+                }
             }
-            temp->next = newNode;
-        }
-    }
-
-    void display(){
-        for (int i = 0; i < numBuckets; i++){
-            cout << "Bucket " << i << ": ";
-            HashNode* temp = table[i];
-            while (temp != nullptr){
-                cout << "(" << temp->key << ", " << temp->value << ") ";
-                temp = temp->next;
+            
+            if (match){
+                indices[index] = i;
+                index++;
             }
-            cout << endl;
         }
     }
 };
 
 int main(){
-    HashTable myhash(10);
-
-    myhash.insert("A", "aaaaa");
-    myhash.insert("B", "bbbbb");
-    myhash.insert("C", "ccccc");
-    myhash.insert("A", "zzzzz");
-    myhash.display();
-
+    TextSearcher search;
+    string text = "the quick brown fox jumps over the lazy dog";
+    string pattern = "the";
+    
+    int indices[100];
+    int index, cmp;
+    search.searchPattern(text, pattern, indices, index, cmp);
+    
+    cout << "Input: Text = \"" << text << "\"" << endl;
+    cout << "Pattern = \"" << pattern << "\"" << endl << "Output: [";
+    for (int i = 0; i < index; i++){
+        cout << indices[i];
+        
+        if (i < index - 1) {cout << ", ";}
+    }
+    cout << "]" << endl;
+    cout << "Total comparisons: " << cmp << endl;
+    
     return 0;
 }
